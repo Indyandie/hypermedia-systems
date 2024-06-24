@@ -1,0 +1,8 @@
+#!/usr/bin/env zsh
+
+function adoc2xml() {
+    echo "Converting ../book/*.adoc to ..."
+    asciidoctor -b docbook -d book -D ./xml ../book/*.adoc
+}
+
+adoc2xml
