@@ -1,8 +1,77 @@
 #!/usr/bin/env zsh
+cpbook() {
+    if [[ -d book ]]; then
+        rm -rf book && echo "✓ rm book/" || echo "rm book/"
+    fi
 
-function adoc2xml() {
-    echo "Converting ../book/*.adoc to ..."
-    asciidoctor -b docbook -d book -D ./xml ../book/*.adoc
+    mkdir book && echo "✓ created book/"
+    cp ../book/CH*.adoc ./book/
+    cp ../book/COPYRIGHT-ACKNOWLEDGMENTS.adoc ./book/01-Copyright.adoc
+    cp ../book/DEDICATION.adoc ./book/02-Dedication.adoc
+    cp ../book/Foreword.adoc ./book/03_Foreword.adoc
+    cp ../book/INDEX.adoc ./book/
+    fd -e adoc -I -x sd _hyperscript \\_hyperscript
 }
 
-adoc2xml
+adoc2xml() {
+    if [[ -d xml ]]; then
+        echo "removing xml/*.xml files"
+        rm -rf xml && echo "✓ rm xml"
+    else
+        mkdir xml && echo "✓ created xml/"
+    fi
+    echo "Converting ../book/*.adoc files to xml..."
+    asciidoctor -b docbook -d book -D ./xml ./book/*.adoc && echo "✓ xml files created"
+
+    sd "<h6>" "h6" xml/01-Copyright.xml
+}
+
+xml2md() {
+    if [[ -d md ]]; then
+        echo "removing md/*.md files"
+        rm -rf md && echo "✓ rm md/" || echo ":( not rm md/"
+    fi
+
+    mkdir md && echo "✓ created md/"
+    echo "Converting ./xml/*.xml files to md..."
+    fd -e xml -I -x \
+        pandoc -o ./md/{/.}.md --from docbook --to gfm {} && echo "✓ converted xml to md"
+
+    cp ../images/* ./md/ -r
+
+    fd -e md -I -x sd "^#+ ([0-1a-zA-Z]+|\S)" '#$0'
+
+    sd "# \n" "# Copyright\n" ./md/01-Copyright.md
+    sd "# \n" "# Dedication\n" ./md/02-Dedication.md
+    sd "# \n" "# Foreword\n" ./md/03_Foreword.md
+    sd "# \n" "# Introduction\n" ./md/CH00_Introduction.md
+    sd "# \n" "# 01 Hypermedia A Reintroduction\n" ./md/CH01_HypermediaAReintroduction.md
+    sd "# \n" "# 02 Components Of A Hypermedia System\n" ./md/CH02_ComponentsOfAHypermediaSystem.md
+    sd "# \n" "# 03 BuildingA Simple Web Application\n" ./md/CH03_BuildingASimpleWebApplication.md
+    sd "# \n" "# 04 Extending HTML As Hypermedia\n" ./md/CH04_ExtendingHTMLAsHypermedia.md
+    sd "# \n" "# 05 Htmx Patterns\n" ./md/CH05_htmxPatterns.md
+    sd "# \n" "# 07 A Dynamic Archive UI With Htmx\n" ./md/CH07_ADynamicArchiveUIWithhtmx.md
+    sd "# \n" "# 09 Scripting In A Hypermedia Application\n" ./md/CH09_ScriptingInAHypermediaApplication.md
+    sd "# \n" "# 10 JSON Data APIs\n" ./md/CH10_JSONDataAPIs.md
+    sd "# \n" "# 11 Hyperview A Mobile Hypermedia\n" ./md/CH11_HyperviewAMobileHypermedia.md
+    sd "# \n" "# 12 Building A Contacts App With Hyperview\n" ./md/CH12_BuildingAContactsAppWithHyperview.md
+    sd "# \n" "# 13 Extending The Hyperview Client\n" ./md/CH13_ExtendingTheHyperviewClient.md
+    sd "# \n" "# Index\n" ./md/INDEX.md
+
+    sed -i '1s/^/# 06 More Htmx Patterns\n\n/' ./md/CH06_MorehtmxPatterns.md
+    sed -i '1s/^/# 08 Tricks Of The Htmx Masters\n\n/' ./md/CH08_TricksOfThehtmxMasters.md
+    sed -i '1s/^/# Conclusion\n\n/' ./md/CH14_Conclusion.md
+    sd 'version="1.1"' '$0 fill="#aaaaaa"' ./md/diagram/*.svg
+    sd 'svg">' '$0\n<rect width="100%" height="100%" fill="#333333" />' ./md/diagram/*.svg
+}
+
+cpbook && adoc2xml && xml2md
+
+cd md && pandoc -t epub3 -f markdown \
+    ../title.txt \
+    --css ../epub.css \
+    --toc --split-level=2 --top-level-division=chapter \
+    --standalone \
+    --toc \
+    -o ../hypermedia-systems.epub \
+    *.md
