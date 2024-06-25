@@ -20,3 +20,7 @@
 1. Adjust headings and add chapter titles
 1. Copy images and adjust `svg` fill and background
 1. Covert `md` to `epub`
+
+## Generate EPUB
+
+Under the `epub` directory run `./epub-script`
