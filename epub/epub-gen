@@ -37,8 +37,6 @@ xml2md() {
     fd -e xml -I -x \
         pandoc -o ./md/{/.}.md --from docbook --to gfm {} && echo "✓ converted xml to md"
 
-    cp ../images/* ./md/ -r
-
     fd -e md -I -x sd "^#+ ([0-1a-zA-Z]+|\S)" '#$0'
 
     sd "# \n" "# Copyright\n" ./md/01-Copyright.md
@@ -61,8 +59,11 @@ xml2md() {
     sed -i '1s/^/# 06 More Htmx Patterns\n\n/' ./md/CH06_MorehtmxPatterns.md
     sed -i '1s/^/# 08 Tricks Of The Htmx Masters\n\n/' ./md/CH08_TricksOfThehtmxMasters.md
     sed -i '1s/^/# Conclusion\n\n/' ./md/CH14_Conclusion.md
+
+    cp ../images/* ./md/ -r
     sd 'version="1.1"' '$0 fill="#aaaaaa"' ./md/diagram/*.svg
     sd 'svg">' '$0\n<rect width="100%" height="100%" fill="#333333" />' ./md/diagram/*.svg
+
 }
 
 cpbook && adoc2xml && xml2md
